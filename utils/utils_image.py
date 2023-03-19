@@ -471,80 +471,122 @@ def channel_convert(in_c, tar_type, img_list):
         return img_list
 
 
+def _convert_input_type_range(img):
+    img_type = img.dtype
+    img = img.astype(np.float32)
+    if img_type == np.float32:
+        pass
+    elif img_type == np.uint8:
+        img /= 255.
+    else:
+        raise TypeError(f'The img type should be np.float32 or np.uint8, but got {img_type}')
+    return img
+
+
+def _convert_output_type_range(img, dst_type):
+    if dst_type not in (np.uint8, np.float32):
+        raise TypeError(f'The dst_type should be np.float32 or np.uint8, but got {dst_type}')
+    if dst_type == np.uint8:
+        img = img.round()
+    else:
+        img /= 255.
+    return img.astype(dst_type)
+
+
+def bgr2ycbcr(img, y_only=False):
+    img_type = img.dtype
+    img = _convert_input_type_range(img)
+    if y_only:
+        out_img = np.dot(img, [24.966, 128.553, 65.481]) + 16.0
+    else:
+        out_img = np.matmul(
+            img, [[24.966, 112.0, -18.214], [128.553, -74.203, -93.786], [65.481, -37.797, 112.0]]) + [16, 128, 128]
+    out_img = _convert_output_type_range(out_img, img_type)
+    return out_img
+
+
+def to_y_channel(img):
+    img = img.astype(np.float32) / 255.
+    if img.ndim == 3 and img.shape[2] == 3:
+        img = bgr2ycbcr(img, y_only=True)
+        img = img[..., None]
+    return img * 255.
+
+
+def _bord_img(img_p, SCALE=4):
+    img_p = img_p[...,::-1]
+    h, w, c = img_p.shape
+    img_p = img_p[:h-h%SCALE, :w-w%SCALE, :]
+    boundarypixels = SCALE
+    img_p = img_p[boundarypixels:-boundarypixels,boundarypixels:-boundarypixels,:]
+    return img_p
+
+
 '''
 # =======================================
 # metric, PSNR and SSIM
 # =======================================
 '''
 
-
 # ----------
 # PSNR
 # ----------
 def calculate_psnr(img1, img2, border=0):
-    # img1 and img2 have range [0, 255]
-    if not img1.shape == img2.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    h, w = img1.shape[:2]
-    img1 = img1[border:h-border, border:w-border]
-    img2 = img2[border:h-border, border:w-border]
-
-    img1 = img1.astype(np.float64)
-    img2 = img2.astype(np.float64)
-    mse = np.mean((img1 - img2)**2)
-    if mse == 0:
-        return float('inf')
-    return 20 * math.log10(255.0 / math.sqrt(mse))
+    img1 = _bord_img(img1)
+    img2 = _bord_img(img2)
+    return _calculate_psnr(img1, img2)
 
 
 # ----------
 # SSIM
 # ----------
 def calculate_ssim(img1, img2, border=0):
-    '''calculate SSIM
-    the same outputs as MATLAB's
-    img1, img2: [0, 255]
-    '''
-    if not img1.shape == img2.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    h, w = img1.shape[:2]
-    img1 = img1[border:h-border, border:w-border]
-    img2 = img2[border:h-border, border:w-border]
-
-    if img1.ndim == 2:
-        return ssim(img1, img2)
-    elif img1.ndim == 3:
-        if img1.shape[2] == 3:
-            ssims = []
-            for i in range(3):
-                ssims.append(ssim(img1, img2))
-            return np.array(ssims).mean()
-        elif img1.shape[2] == 1:
-            return ssim(np.squeeze(img1), np.squeeze(img2))
-    else:
-        raise ValueError('Wrong input image dimensions.')
+    img1 = _bord_img(img1)
+    img2 = _bord_img(img2)
+    return _calculate_ssim(img1, img2)
 
 
-def ssim(img1, img2):
-    C1 = (0.01 * 255)**2
-    C2 = (0.03 * 255)**2
+def _calculate_ssim(img, img2, test_y_channel=True):
+    if test_y_channel:
+        img = to_y_channel(img)
+        img2 = to_y_channel(img2)
 
-    img1 = img1.astype(np.float64)
+    ssims = []
+    for i in range(img.shape[2]):
+        ssims.append(_ssim(img[..., i], img2[..., i]))
+    return np.array(ssims).mean()
+
+
+def _calculate_psnr(img, img2, test_y_channel=True,):
+    if test_y_channel:
+        img = to_y_channel(img)
+        img2 = to_y_channel(img2)
+
+    mse = np.mean((img - img2)**2)
+    if mse == 0:
+        return float('inf')
+    return 20. * np.log10(255. / np.sqrt(mse))
+
+
+def _ssim(img, img2):
+    c1 = (0.01 * 255)**2
+    c2 = (0.03 * 255)**2
+
+    img = img.astype(np.float64)
     img2 = img2.astype(np.float64)
     kernel = cv2.getGaussianKernel(11, 1.5)
     window = np.outer(kernel, kernel.transpose())
 
-    mu1 = cv2.filter2D(img1, -1, window)[5:-5, 5:-5]  # valid
+    mu1 = cv2.filter2D(img, -1, window)[5:-5, 5:-5]
     mu2 = cv2.filter2D(img2, -1, window)[5:-5, 5:-5]
     mu1_sq = mu1**2
     mu2_sq = mu2**2
     mu1_mu2 = mu1 * mu2
-    sigma1_sq = cv2.filter2D(img1**2, -1, window)[5:-5, 5:-5] - mu1_sq
+    sigma1_sq = cv2.filter2D(img**2, -1, window)[5:-5, 5:-5] - mu1_sq
     sigma2_sq = cv2.filter2D(img2**2, -1, window)[5:-5, 5:-5] - mu2_sq
-    sigma12 = cv2.filter2D(img1 * img2, -1, window)[5:-5, 5:-5] - mu1_mu2
+    sigma12 = cv2.filter2D(img * img2, -1, window)[5:-5, 5:-5] - mu1_mu2
 
-    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) *
-                                                            (sigma1_sq + sigma2_sq + C2))
+    ssim_map = ((2 * mu1_mu2 + c1) * (2 * sigma12 + c2)) / ((mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2))
     return ssim_map.mean()
 
 
