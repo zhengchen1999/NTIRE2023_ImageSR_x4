@@ -1,4 +1,4 @@
-# [NTIRE 2023 Challenge on Efficient Super-Resolution](https://cvlai.net/ntire/2023/) @ [CVPR 2023](https://cvpr2023.thecvf.com/)
+# [NTIRE 2023 Challenge on Image Super-Resolution (x4)](https://cvlai.net/ntire/2023/) @ [CVPR 2023](https://cvpr2023.thecvf.com/)
 
 ## How to test the baseline model?
 
@@ -10,7 +10,7 @@
     - Be sure the change the directories `--data_dir` and `--save_dir`.
    
 ## How to add your model to this baseline?
-1. Register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1oekPThh5mq9qKax0hPZiQSHlqTjaoQa-IBfrQkwN7gk/edit?usp=sharing) and get your team ID.
+1. Register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1P13yRO-r3bNsB7RdNr5xjPEVPnyLFjBgz8ktuPl9AME/edit?usp=sharing) and get your team ID.
 2. Put your the code of your model in `./models/[Your_Team_ID]_[Your_Model_Name].py`
    - Please add **only one** file in the folder `./models`. **Please do not add other submodules**.
    - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02 
