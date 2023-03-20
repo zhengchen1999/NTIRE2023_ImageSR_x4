@@ -33,7 +33,7 @@ def select_model(args, device):
         # # CAT (CAT-R) baseline, NeurIPS 2022
         # from models.team00_CAT import CAT
         # name, data_range = f"{model_id:02}_CAT_baseline", 1.0
-        # model_path = os.path.join('model_zoo', 'tram00_cat.pth')
+        # model_path = os.path.join('model_zoo', 'team00_cat.pth')
         # model = CAT()
         # model.load_state_dict(torch.load(model_path), strict=True)
     else:
