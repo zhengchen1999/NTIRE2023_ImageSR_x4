@@ -8,14 +8,15 @@
     CUDA_VISIBLE_DEVICES=0 python test_demo.py --data_dir [path to your data dir] --save_dir [path to your save dir] --model_id 0
     ```
     - Be sure the change the directories `--data_dir` and `--save_dir`.
-   
+
 ## How to add your model to this baseline?
 1. Register your team in the [Google Spreadsheet](https://docs.google.com/spreadsheets/d/1P13yRO-r3bNsB7RdNr5xjPEVPnyLFjBgz8ktuPl9AME/edit?usp=sharing) and get your team ID.
 2. Put your the code of your model in `./models/[Your_Team_ID]_[Your_Model_Name].py`
    - Please add **only one** file in the folder `./models`. **Please do not add other submodules**.
    - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02 
 3. Put the pretrained model in `./model_zoo/[Your_Team_ID]_[Your_Model_Name].[pth or pt or ckpt]`
-   - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02  
+   - Please zero pad [Your_Team_ID] into two digits: e.g. 00, 01, 02
+   - Note:  Please provide a download link for the pretrained model, if the file size exceeds **100 MB**. Put the link in `./model_zoo/[Your_Team_ID]_[Your_Model_Name].txt`: e.g. [cat.txt](https://github.com/zhengchen1999/NTIRE2023_ImageSR_x4/blob/main/model_zoo/team00_cat.txt)
 4. Add your model to the model loader `./test_demo/select_model` as follows:
     ```python
         elif model_id == [Your_Team_ID]:
