@@ -195,8 +195,8 @@ def run(model, model_name, data_range, tile, logger, device, args, mode="test"):
 
 def main(args):
 
-    utils_logger.logger_info("NTIRE2023-EfficientSR", log_path="NTIRE2023-EfficientSR.log")
-    logger = logging.getLogger("NTIRE2023-EfficientSR")
+    utils_logger.logger_info("NTIRE2023-ImageSR-x4", log_path="NTIRE2023-ImageSR-x4.log")
+    logger = logging.getLogger("NTIRE2023-ImageSR-x4")
 
     # --------------------------------
     # basic settings
